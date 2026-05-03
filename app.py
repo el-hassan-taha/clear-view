@@ -162,18 +162,18 @@ def load_metadata():
     if os.path.exists("models/metadata.json"):
         with open("models/metadata.json", "r") as f:
             return json.load(f)
-    return {"logistic": 0.0, "lstm": 0.0}
+    return {"rnn": 0.0, "lstm": 0.0}
 
 metadata = load_metadata()
 
 # Lazy Loaders
 @st.cache_resource
-def load_logistic_model():
-    with open('models/logistic_model.pkl', 'rb') as f:
-        model = pickle.load(f)
-    with open('models/tfidf_vectorizer.pkl', 'rb') as f:
-        vectorizer = pickle.load(f)
-    return model, vectorizer
+def load_rnn_model():
+    from tensorflow.keras.models import load_model
+    model = load_model('models/rnn_model.h5')
+    with open('models/tokenizer.pkl', 'rb') as f:
+        tokenizer = pickle.load(f)
+    return model, tokenizer
 
 @st.cache_resource
 def load_lstm_model():
@@ -187,16 +187,16 @@ def load_lstm_model():
 st.sidebar.title("Model Settings")
 model_choice = st.sidebar.selectbox(
     "Select Model",
-    ["Logistic Regression", "LSTM Neural Network"]
+    ["RNN Neural Network", "LSTM Neural Network"]
 )
 
-if model_choice == "Logistic Regression":
-    st.sidebar.metric(label="Training Accuracy", value=f"{metadata.get('logistic', 0) * 100:.2f}%")
+if model_choice == "RNN Neural Network":
+    st.sidebar.metric(label="Training Accuracy", value=f"{metadata.get('rnn', 0) * 100:.2f}%")
 else:
     st.sidebar.metric(label="Training Accuracy", value=f"{metadata.get('lstm', 0) * 100:.2f}%")
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("<p style='color:#cbd5e1; font-size:0.9rem;'>The Logistic Regression model uses TF-IDF features. The LSTM model uses word embeddings and captures sequential context.</p>", unsafe_allow_html=True)
+st.sidebar.markdown("<p style='color:#cbd5e1; font-size:0.9rem;'>Both the RNN and LSTM models use word embeddings to capture sequential context, with LSTM better at capturing long-term dependencies.</p>", unsafe_allow_html=True)
 
 # --- Main Interface Layout ---
 st.title("🛡️ Clear-View: News Verifier")
@@ -217,12 +217,12 @@ if run_button:
             try:
                 cleaned_text = preprocess_input(news_input)
                 
-                if model_choice == "Logistic Regression":
-                    model, vectorizer = load_logistic_model()
-                    transformed_text = vectorizer.transform([cleaned_text])
-                    prediction_prob = model.predict_proba(transformed_text)[0]
-                    # LogReg predict_proba returns [prob_fake, prob_real] since 0=Fake, 1=Real
-                    prob_real = prediction_prob[1]
+                if model_choice == "RNN Neural Network":
+                    model, tokenizer = load_rnn_model()
+                    from tensorflow.keras.preprocessing.sequence import pad_sequences
+                    sequence = tokenizer.texts_to_sequences([cleaned_text])
+                    padded_sequence = pad_sequences(sequence, maxlen=100)
+                    prob_real = float(model.predict(padded_sequence)[0][0])
                 else:
                     model, tokenizer = load_lstm_model()
                     from tensorflow.keras.preprocessing.sequence import pad_sequences

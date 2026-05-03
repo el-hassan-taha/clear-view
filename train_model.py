@@ -6,15 +6,13 @@ import pickle
 import json
 from sklearn.utils import shuffle
 from sklearn.model_selection import train_test_split
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 import nltk
 from nltk.corpus import stopwords
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Embedding, LSTM, Dense
+from tensorflow.keras.layers import Embedding, LSTM, Dense, SimpleRNN
 
 # Download NLTK data
 nltk.download('stopwords')
@@ -72,35 +70,8 @@ def main():
     metadata = {}
 
     # ---------------------------
-    # Model A: Logistic Regression
+    # Tokenization and Padding
     # ---------------------------
-    print("--- Training Logistic Regression ---")
-    print("Vectorizing text (TF-IDF)...")
-    tfidf = TfidfVectorizer(max_features=10000)
-    X_train_tfidf = tfidf.fit_transform(X_train_text)
-    X_test_tfidf = tfidf.transform(X_test_text)
-
-    print("Fitting Logistic Regression...")
-    log_reg = LogisticRegression(max_iter=1000)
-    log_reg.fit(X_train_tfidf, y_train)
-
-    print("Evaluating Logistic Regression...")
-    y_pred_log = log_reg.predict(X_test_tfidf)
-    log_acc = accuracy_score(y_test, y_pred_log)
-    print(f"Logistic Regression Accuracy: {log_acc:.4f}")
-    
-    metadata["logistic"] = round(log_acc, 4)
-
-    print("Saving Logistic Regression assets...")
-    with open('models/logistic_model.pkl', 'wb') as f:
-        pickle.dump(log_reg, f)
-    with open('models/tfidf_vectorizer.pkl', 'wb') as f:
-        pickle.dump(tfidf, f)
-
-    # ---------------------------
-    # Model B: LSTM
-    # ---------------------------
-    print("--- Training LSTM ---")
     print("Tokenizing and Padding...")
     tokenizer = Tokenizer(num_words=10000)
     tokenizer.fit_on_texts(X_train_text)
@@ -111,6 +82,36 @@ def main():
     X_train_pad = pad_sequences(X_train_seq, maxlen=100)
     X_test_pad = pad_sequences(X_test_seq, maxlen=100)
 
+    # ---------------------------
+    # Model A: RNN
+    # ---------------------------
+    print("--- Training RNN ---")
+    print("Building RNN model...")
+    rnn_model = Sequential()
+    rnn_model.add(Embedding(input_dim=10000, output_dim=128, input_length=100))
+    rnn_model.add(SimpleRNN(64))
+    rnn_model.add(Dense(1, activation='sigmoid'))
+
+    rnn_model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+    print("Training RNN...")
+    rnn_model.fit(X_train_pad, y_train, epochs=5, batch_size=128, validation_data=(X_test_pad, y_test))
+
+    print("Evaluating RNN...")
+    rnn_loss, rnn_acc = rnn_model.evaluate(X_test_pad, y_test)
+    print(f"RNN Accuracy: {rnn_acc:.4f}")
+    
+    metadata["rnn"] = round(rnn_acc, 4)
+
+    print("Saving RNN assets...")
+    rnn_model.save('models/rnn_model.h5')
+    with open('models/tokenizer.pkl', 'wb') as f:
+        pickle.dump(tokenizer, f)
+
+    # ---------------------------
+    # Model B: LSTM
+    # ---------------------------
+    print("--- Training LSTM ---")
     print("Building LSTM model...")
     model = Sequential()
     model.add(Embedding(input_dim=10000, output_dim=128, input_length=100))
@@ -131,8 +132,6 @@ def main():
 
     print("Saving LSTM assets...")
     model.save('models/lstm_model.h5')
-    with open('models/tokenizer.pkl', 'wb') as f:
-        pickle.dump(tokenizer, f)
 
     # ---------------------------
     # Save Metadata
