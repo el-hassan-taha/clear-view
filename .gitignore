@@ -1,0 +1,6 @@
+data/fake.csv
+data/true.csv
+data/dataset.csv
+
+models/*.h5
+models/*.pkl
