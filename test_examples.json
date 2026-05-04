@@ -1,0 +1,18 @@
+{
+  "real_news": [
+    {
+      "content": "The United Nations Security Council is set to vote on a new resolution regarding climate change mitigation strategies next week. Leaders from several nations have expressed their support for the proposed carbon emission targets."
+    },
+    {
+      "content": "The European Union has officially implemented new regulations aimed at curbing the market dominance of major technology companies. The legislation, known as the Digital Markets Act, introduces strict rules for 'gatekeeper' platforms to ensure fair competition and protect consumer data privacy. Officials stated that non-compliance could lead to significant financial penalties for firms operating within the eurozone."
+    }
+  ],
+  "fake_news": [
+    {
+      "content": "Breaking: Secret documents reveal that a hidden group of world leaders is planning to replace all physical currency with a global tracking chip by the end of this year. Share this before it gets deleted!"
+    },
+    {
+      "content": "A miracle fruit found in the Amazon rainforest has been proven to cure all types of diseases in just 24 hours, but big pharmaceutical companies are trying to hide the truth from the public."
+    }
+  ]
+}
